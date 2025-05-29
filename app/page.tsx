@@ -1,107 +1,110 @@
-"use client"
+import { Header } from "@/components/landing/header"
+import { Hero } from "@/components/landing/hero"
+import { Features } from "@/components/landing/features"
+import { Pricing } from "@/components/landing/pricing"
 
-import { useState } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { BusinessCard } from "@/components/business-card"
-import { RecentProjects } from "@/components/recent-projects"
-import { Button } from "@/components/ui/button"
-import { PlusCircle } from "lucide-react"
-import Link from "next/link"
-import { useBusinesses } from "@/context/business-context"
-import { toast } from "@/components/ui/use-toast"
-import { Skeleton } from "@/components/ui/skeleton"
-
-export default function Home() {
-  const { businesses, isLoading, deleteBusiness } = useBusinesses()
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [businessToDelete, setBusinessToDelete] = useState<string | null>(null)
-
-  const handleDeleteBusiness = (id: string) => {
-    const success = deleteBusiness(id)
-
-    if (success) {
-      toast({
-        title: "Business deleted",
-        description: "The business has been deleted successfully",
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to delete business. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
+export default function LandingPage() {
   return (
-    <div className="space-y-6">
-      <DashboardHeader />
+    <div className="min-h-screen">
+      <Header />
+      <Hero />
+      <Features />
+      <Pricing />
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Your Businesses</h2>
-        <Link href="/businesses/new">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Business
-          </Button>
-        </Link>
-      </div>
-
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
-          ))}
-        </div>
-      ) : businesses.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {businesses.slice(0, 3).map((business) => (
-            <BusinessCard
-              key={business.id}
-              id={business.id}
-              name={business.name}
-              description={business.description}
-              projectCount={business.projectCount}
-              activeProjects={business.activeProjects}
-              industry={business.industry}
-              onDelete={handleDeleteBusiness}
-            />
-          ))}
-          {businesses.length > 3 && (
-            <Link
-              href="/businesses"
-              className="flex items-center justify-center p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <div className="text-center">
-                <p className="font-medium">View All Businesses</p>
-                <p className="text-sm text-muted-foreground">
-                  {businesses.length - 3} more {businesses.length - 3 === 1 ? "business" : "businesses"}
-                </p>
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold">M</span>
+                </div>
+                <span className="text-xl font-bold">Macrum</span>
               </div>
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="flex items-center justify-center p-8 border rounded-lg">
-          <div className="text-center">
-            <h3 className="mt-4 text-lg font-medium">No businesses yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Add your first business to start managing your projects
-            </p>
-            <Link href="/businesses/new">
-              <Button className="mt-4">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Your First Business
-              </Button>
-            </Link>
+              <p className="text-gray-400">Modern task management for productive teams.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>
+                  <a href="#features" className="hover:text-white">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#pricing" className="hover:text-white">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Integrations
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    API
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>
+                  <a href="#about" className="hover:text-white">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <a href="#contact" className="hover:text-white">
+                    Contact
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Help Center
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Documentation
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Status
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Community
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Macrum. All rights reserved.</p>
           </div>
         </div>
-      )}
-
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold tracking-tight mb-4">Recent Projects</h2>
-        <RecentProjects />
-      </div>
+      </footer>
     </div>
   )
 }

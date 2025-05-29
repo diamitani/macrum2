@@ -1,17 +1,15 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { v4 as uuidv4 } from "uuid"
+import { generateId } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
-import { useBusinesses } from "./business-context"
 
 export interface Project {
   id: string
   name: string
-  description: string
-  businessId: string
-  businessName: string
-  status: "planning" | "in-progress" | "in-review" | "completed"
+  description?: string
+  businessId?: string
+  status: "planning" | "in-progress" | "on-hold" | "completed"
   priority: "low" | "medium" | "high"
   progress: number
   startDate: string
@@ -27,9 +25,7 @@ interface ProjectContextType {
   isLoading: boolean
   getProject: (id: string) => Project | undefined
   getProjectsByBusiness: (businessId: string) => Project[]
-  addProject: (
-    project: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks" | "businessName">,
-  ) => Project
+  addProject: (project: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks">) => Project
   updateProject: (id: string, project: Partial<Project>) => Project | undefined
   deleteProject: (id: string) => boolean
   incrementTaskCount: (projectId: string, completed?: boolean) => void
@@ -41,7 +37,6 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { getBusiness, incrementProjectCount, decrementProjectCount } = useBusinesses()
 
   // Load projects from localStorage on mount
   useEffect(() => {
@@ -50,15 +45,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         const savedProjects = localStorage.getItem("projects")
         if (savedProjects) {
           const parsedProjects = JSON.parse(savedProjects)
-          // Update business names in case they changed
-          const updatedProjects = parsedProjects.map((project: Project) => {
-            const business = getBusiness(project.businessId)
-            return {
-              ...project,
-              businessName: business?.name || "Unknown Business",
-            }
-          })
-          setProjects(updatedProjects)
+          setProjects(parsedProjects)
         }
       } catch (error) {
         console.error("Failed to load projects from localStorage:", error)
@@ -73,7 +60,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
 
     loadProjects()
-  }, [getBusiness])
+  }, [])
 
   // Save projects to localStorage whenever they change
   useEffect(() => {
@@ -91,18 +78,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }
 
   const addProject = (
-    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks" | "businessName">,
+    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks">,
   ) => {
-    const business = getBusiness(projectData.businessId)
-    if (!business) {
-      throw new Error("Business not found")
-    }
-
     const now = new Date().toISOString()
     const newProject: Project = {
-      id: uuidv4(),
+      id: generateId(),
       ...projectData,
-      businessName: business.name,
       createdAt: now,
       updatedAt: now,
       taskCount: 0,
@@ -110,10 +91,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
 
     setProjects((prev) => [...prev, newProject])
-
-    // Update business project count
-    incrementProjectCount(projectData.businessId, projectData.status !== "completed")
-
     return newProject
   }
 
@@ -123,11 +100,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setProjects((prev) => {
       const updatedProjects = prev.map((project) => {
         if (project.id === id) {
-          const business = getBusiness(projectData.businessId || project.businessId)
           updatedProject = {
             ...project,
             ...projectData,
-            businessName: business?.name || project.businessName,
             updatedAt: new Date().toISOString(),
           }
           return updatedProject
@@ -145,10 +120,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     if (!project) return false
 
     setProjects((prev) => prev.filter((p) => p.id !== id))
-
-    // Update business project count
-    decrementProjectCount(project.businessId, project.status !== "completed")
-
     return true
   }
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { v4 as uuidv4 } from "uuid"
 import { toast } from "@/components/ui/use-toast"
 
 export interface Business {
@@ -17,6 +16,8 @@ export interface Business {
   updatedAt: string
   projectCount: number
   activeProjects: number
+  clientIds: string[] // Dependencies to clients
+  status: "active" | "inactive" | "archived"
 }
 
 interface BusinessContextType {
@@ -24,15 +25,22 @@ interface BusinessContextType {
   isLoading: boolean
   getBusiness: (id: string) => Business | undefined
   addBusiness: (
-    business: Omit<Business, "id" | "createdAt" | "updatedAt" | "projectCount" | "activeProjects">,
+    business: Omit<Business, "id" | "createdAt" | "updatedAt" | "projectCount" | "activeProjects" | "clientIds">,
   ) => Business
   updateBusiness: (id: string, business: Partial<Business>) => Business | undefined
   deleteBusiness: (id: string) => boolean
   incrementProjectCount: (businessId: string, active?: boolean) => void
   decrementProjectCount: (businessId: string, active?: boolean) => void
+  addClientToBusiness: (businessId: string, clientId: string) => void
+  removeClientFromBusiness: (businessId: string, clientId: string) => void
 }
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined)
+
+// Simple ID generator function
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [businesses, setBusinesses] = useState<Business[]>([])
@@ -42,7 +50,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadBusinesses = () => {
       try {
-        const savedBusinesses = localStorage.getItem("businesses")
+        const savedBusinesses = localStorage.getItem("macrum_businesses")
         if (savedBusinesses) {
           setBusinesses(JSON.parse(savedBusinesses))
         }
@@ -64,7 +72,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   // Save businesses to localStorage whenever they change
   useEffect(() => {
     if (!isLoading) {
-      localStorage.setItem("businesses", JSON.stringify(businesses))
+      localStorage.setItem("macrum_businesses", JSON.stringify(businesses))
     }
   }, [businesses, isLoading])
 
@@ -73,19 +81,25 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   }
 
   const addBusiness = (
-    businessData: Omit<Business, "id" | "createdAt" | "updatedAt" | "projectCount" | "activeProjects">,
+    businessData: Omit<Business, "id" | "createdAt" | "updatedAt" | "projectCount" | "activeProjects" | "clientIds">,
   ) => {
     const now = new Date().toISOString()
     const newBusiness: Business = {
-      id: uuidv4(),
+      id: generateId(),
       ...businessData,
       createdAt: now,
       updatedAt: now,
       projectCount: 0,
       activeProjects: 0,
+      clientIds: [],
+      status: "active",
     }
 
     setBusinesses((prev) => [...prev, newBusiness])
+    toast({
+      title: "Success",
+      description: "Business created successfully!",
+    })
     return newBusiness
   }
 
@@ -107,6 +121,13 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       return updatedBusinesses
     })
 
+    if (updatedBusiness) {
+      toast({
+        title: "Success",
+        description: "Business updated successfully!",
+      })
+    }
+
     return updatedBusiness
   }
 
@@ -115,6 +136,10 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
     if (businessExists) {
       setBusinesses((prev) => prev.filter((business) => business.id !== id))
+      toast({
+        title: "Success",
+        description: "Business deleted successfully!",
+      })
       return true
     }
 
@@ -153,6 +178,36 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const addClientToBusiness = (businessId: string, clientId: string) => {
+    setBusinesses((prev) =>
+      prev.map((business) => {
+        if (business.id === businessId && !business.clientIds.includes(clientId)) {
+          return {
+            ...business,
+            clientIds: [...business.clientIds, clientId],
+            updatedAt: new Date().toISOString(),
+          }
+        }
+        return business
+      }),
+    )
+  }
+
+  const removeClientFromBusiness = (businessId: string, clientId: string) => {
+    setBusinesses((prev) =>
+      prev.map((business) => {
+        if (business.id === businessId) {
+          return {
+            ...business,
+            clientIds: business.clientIds.filter((id) => id !== clientId),
+            updatedAt: new Date().toISOString(),
+          }
+        }
+        return business
+      }),
+    )
+  }
+
   return (
     <BusinessContext.Provider
       value={{
@@ -164,6 +219,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         deleteBusiness,
         incrementProjectCount,
         decrementProjectCount,
+        addClientToBusiness,
+        removeClientFromBusiness,
       }}
     >
       {children}
