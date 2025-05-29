@@ -1,16 +1,18 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { v4 as uuidv4 } from "uuid"
 import { toast } from "@/components/ui/use-toast"
-import { useBusinesses } from "./business-context"
+
+// Generate a simple ID function to avoid external dependencies
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
 
 export interface Project {
   id: string
   name: string
   description: string
   businessId: string
-  businessName: string
   status: "planning" | "in-progress" | "in-review" | "completed"
   priority: "low" | "medium" | "high"
   progress: number
@@ -27,13 +29,12 @@ interface ProjectContextType {
   isLoading: boolean
   getProject: (id: string) => Project | undefined
   getProjectsByBusiness: (businessId: string) => Project[]
-  addProject: (
-    project: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks" | "businessName">,
-  ) => Project
+  addProject: (project: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks">) => Project
   updateProject: (id: string, project: Partial<Project>) => Project | undefined
   deleteProject: (id: string) => boolean
   incrementTaskCount: (projectId: string, completed?: boolean) => void
   decrementTaskCount: (projectId: string, completed?: boolean) => void
+  refreshProjects: () => void
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
@@ -41,30 +42,28 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { getBusiness, incrementProjectCount, decrementProjectCount } = useBusinesses()
 
   // Load projects from localStorage on mount
   useEffect(() => {
     const loadProjects = () => {
       try {
-        const savedProjects = localStorage.getItem("projects")
+        const savedProjects = localStorage.getItem("macrum_projects")
         if (savedProjects) {
           const parsedProjects = JSON.parse(savedProjects)
-          // Update business names in case they changed
-          const updatedProjects = parsedProjects.map((project: Project) => {
-            const business = getBusiness(project.businessId)
-            return {
-              ...project,
-              businessName: business?.name || "Unknown Business",
-            }
-          })
-          setProjects(updatedProjects)
+          // Validate and sanitize the data
+          const validProjects = parsedProjects.filter(
+            (project: any) =>
+              project && typeof project === "object" && project.id && project.name && project.businessId,
+          )
+          setProjects(validProjects)
         }
       } catch (error) {
         console.error("Failed to load projects from localStorage:", error)
+        // Clear corrupted data
+        localStorage.removeItem("macrum_projects")
         toast({
-          title: "Error",
-          description: "Failed to load project data. Please refresh the page.",
+          title: "Data Recovery",
+          description: "Project data was corrupted and has been reset. Please recreate your projects.",
           variant: "destructive",
         })
       } finally {
@@ -73,12 +72,26 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
 
     loadProjects()
-  }, [getBusiness])
+  }, [])
 
-  // Save projects to localStorage whenever they change
+  // Save projects to localStorage with error handling
+  const saveProjects = (projectsToSave: Project[]) => {
+    try {
+      localStorage.setItem("macrum_projects", JSON.stringify(projectsToSave))
+    } catch (error) {
+      console.error("Failed to save projects to localStorage:", error)
+      toast({
+        title: "Save Error",
+        description: "Failed to save project data. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Save projects whenever they change
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("projects", JSON.stringify(projects))
+    if (!isLoading && projects.length >= 0) {
+      saveProjects(projects)
     }
   }, [projects, isLoading])
 
@@ -91,70 +104,113 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }
 
   const addProject = (
-    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks" | "businessName">,
+    projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "taskCount" | "completedTasks">,
   ) => {
-    const business = getBusiness(projectData.businessId)
-    if (!business) {
-      throw new Error("Business not found")
+    try {
+      const now = new Date().toISOString()
+      const newProject: Project = {
+        id: generateId(),
+        ...projectData,
+        createdAt: now,
+        updatedAt: now,
+        taskCount: 0,
+        completedTasks: 0,
+        progress: 0,
+      }
+
+      setProjects((prev) => {
+        const updated = [...prev, newProject]
+        saveProjects(updated)
+        return updated
+      })
+
+      toast({
+        title: "Success",
+        description: `Project "${newProject.name}" has been created successfully.`,
+      })
+
+      return newProject
+    } catch (error) {
+      console.error("Failed to add project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create project. Please try again.",
+        variant: "destructive",
+      })
+      throw error
     }
-
-    const now = new Date().toISOString()
-    const newProject: Project = {
-      id: uuidv4(),
-      ...projectData,
-      businessName: business.name,
-      createdAt: now,
-      updatedAt: now,
-      taskCount: 0,
-      completedTasks: 0,
-    }
-
-    setProjects((prev) => [...prev, newProject])
-
-    // Update business project count
-    incrementProjectCount(projectData.businessId, projectData.status !== "completed")
-
-    return newProject
   }
 
   const updateProject = (id: string, projectData: Partial<Project>) => {
-    let updatedProject: Project | undefined
+    try {
+      let updatedProject: Project | undefined
 
-    setProjects((prev) => {
-      const updatedProjects = prev.map((project) => {
-        if (project.id === id) {
-          const business = getBusiness(projectData.businessId || project.businessId)
-          updatedProject = {
-            ...project,
-            ...projectData,
-            businessName: business?.name || project.businessName,
-            updatedAt: new Date().toISOString(),
+      setProjects((prev) => {
+        const updated = prev.map((project) => {
+          if (project.id === id) {
+            updatedProject = {
+              ...project,
+              ...projectData,
+              updatedAt: new Date().toISOString(),
+            }
+            return updatedProject
           }
-          return updatedProject
-        }
-        return project
+          return project
+        })
+        saveProjects(updated)
+        return updated
       })
-      return updatedProjects
-    })
 
-    return updatedProject
+      if (updatedProject) {
+        toast({
+          title: "Success",
+          description: `Project "${updatedProject.name}" has been updated.`,
+        })
+      }
+
+      return updatedProject
+    } catch (error) {
+      console.error("Failed to update project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update project. Please try again.",
+        variant: "destructive",
+      })
+      return undefined
+    }
   }
 
   const deleteProject = (id: string) => {
-    const project = getProject(id)
-    if (!project) return false
+    try {
+      const project = getProject(id)
+      if (!project) return false
 
-    setProjects((prev) => prev.filter((p) => p.id !== id))
+      setProjects((prev) => {
+        const updated = prev.filter((p) => p.id !== id)
+        saveProjects(updated)
+        return updated
+      })
 
-    // Update business project count
-    decrementProjectCount(project.businessId, project.status !== "completed")
+      toast({
+        title: "Success",
+        description: `Project "${project.name}" has been deleted.`,
+      })
 
-    return true
+      return true
+    } catch (error) {
+      console.error("Failed to delete project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      })
+      return false
+    }
   }
 
   const incrementTaskCount = (projectId: string, completed = false) => {
-    setProjects((prev) =>
-      prev.map((project) => {
+    setProjects((prev) => {
+      const updated = prev.map((project) => {
         if (project.id === projectId) {
           const newTaskCount = project.taskCount + 1
           const newCompletedTasks = completed ? project.completedTasks + 1 : project.completedTasks
@@ -169,13 +225,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           }
         }
         return project
-      }),
-    )
+      })
+      saveProjects(updated)
+      return updated
+    })
   }
 
   const decrementTaskCount = (projectId: string, completed = false) => {
-    setProjects((prev) =>
-      prev.map((project) => {
+    setProjects((prev) => {
+      const updated = prev.map((project) => {
         if (project.id === projectId) {
           const newTaskCount = Math.max(0, project.taskCount - 1)
           const newCompletedTasks = completed ? Math.max(0, project.completedTasks - 1) : project.completedTasks
@@ -190,8 +248,25 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           }
         }
         return project
-      }),
-    )
+      })
+      saveProjects(updated)
+      return updated
+    })
+  }
+
+  const refreshProjects = () => {
+    setIsLoading(true)
+    try {
+      const savedProjects = localStorage.getItem("macrum_projects")
+      if (savedProjects) {
+        const parsedProjects = JSON.parse(savedProjects)
+        setProjects(parsedProjects)
+      }
+    } catch (error) {
+      console.error("Failed to refresh projects:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -206,6 +281,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         deleteProject,
         incrementTaskCount,
         decrementTaskCount,
+        refreshProjects,
       }}
     >
       {children}

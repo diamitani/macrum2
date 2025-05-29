@@ -1,18 +1,23 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { v4 as uuidv4 } from "uuid"
 import { toast } from "@/components/ui/use-toast"
+
+// Generate a simple ID function
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
 
 export interface Business {
   id: string
   name: string
   description: string
-  industry?: string
+  industry: string
   website?: string
   email?: string
   phone?: string
   address?: string
+  status: "active" | "inactive" | "planning"
   createdAt: string
   updatedAt: string
   projectCount: number
@@ -30,6 +35,7 @@ interface BusinessContextType {
   deleteBusiness: (id: string) => boolean
   incrementProjectCount: (businessId: string, active?: boolean) => void
   decrementProjectCount: (businessId: string, active?: boolean) => void
+  refreshBusinesses: () => void
 }
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined)
@@ -42,15 +48,21 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadBusinesses = () => {
       try {
-        const savedBusinesses = localStorage.getItem("businesses")
+        const savedBusinesses = localStorage.getItem("macrum_businesses")
         if (savedBusinesses) {
-          setBusinesses(JSON.parse(savedBusinesses))
+          const parsedBusinesses = JSON.parse(savedBusinesses)
+          // Validate and sanitize the data
+          const validBusinesses = parsedBusinesses.filter(
+            (business: any) => business && typeof business === "object" && business.id && business.name,
+          )
+          setBusinesses(validBusinesses)
         }
       } catch (error) {
         console.error("Failed to load businesses from localStorage:", error)
+        localStorage.removeItem("macrum_businesses")
         toast({
-          title: "Error",
-          description: "Failed to load business data. Please refresh the page.",
+          title: "Data Recovery",
+          description: "Business data was corrupted and has been reset.",
           variant: "destructive",
         })
       } finally {
@@ -61,10 +73,24 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     loadBusinesses()
   }, [])
 
-  // Save businesses to localStorage whenever they change
+  // Save businesses to localStorage with error handling
+  const saveBusinesses = (businessesToSave: Business[]) => {
+    try {
+      localStorage.setItem("macrum_businesses", JSON.stringify(businessesToSave))
+    } catch (error) {
+      console.error("Failed to save businesses to localStorage:", error)
+      toast({
+        title: "Save Error",
+        description: "Failed to save business data. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Save businesses whenever they change
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("businesses", JSON.stringify(businesses))
+    if (!isLoading && businesses.length >= 0) {
+      saveBusinesses(businesses)
     }
   }, [businesses, isLoading])
 
@@ -75,55 +101,110 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const addBusiness = (
     businessData: Omit<Business, "id" | "createdAt" | "updatedAt" | "projectCount" | "activeProjects">,
   ) => {
-    const now = new Date().toISOString()
-    const newBusiness: Business = {
-      id: uuidv4(),
-      ...businessData,
-      createdAt: now,
-      updatedAt: now,
-      projectCount: 0,
-      activeProjects: 0,
-    }
+    try {
+      const now = new Date().toISOString()
+      const newBusiness: Business = {
+        id: generateId(),
+        ...businessData,
+        createdAt: now,
+        updatedAt: now,
+        projectCount: 0,
+        activeProjects: 0,
+      }
 
-    setBusinesses((prev) => [...prev, newBusiness])
-    return newBusiness
+      setBusinesses((prev) => {
+        const updated = [...prev, newBusiness]
+        saveBusinesses(updated)
+        return updated
+      })
+
+      toast({
+        title: "Success",
+        description: `Business "${newBusiness.name}" has been created successfully.`,
+      })
+
+      return newBusiness
+    } catch (error) {
+      console.error("Failed to add business:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create business. Please try again.",
+        variant: "destructive",
+      })
+      throw error
+    }
   }
 
   const updateBusiness = (id: string, businessData: Partial<Business>) => {
-    let updatedBusiness: Business | undefined
+    try {
+      let updatedBusiness: Business | undefined
 
-    setBusinesses((prev) => {
-      const updatedBusinesses = prev.map((business) => {
-        if (business.id === id) {
-          updatedBusiness = {
-            ...business,
-            ...businessData,
-            updatedAt: new Date().toISOString(),
+      setBusinesses((prev) => {
+        const updated = prev.map((business) => {
+          if (business.id === id) {
+            updatedBusiness = {
+              ...business,
+              ...businessData,
+              updatedAt: new Date().toISOString(),
+            }
+            return updatedBusiness
           }
-          return updatedBusiness
-        }
-        return business
+          return business
+        })
+        saveBusinesses(updated)
+        return updated
       })
-      return updatedBusinesses
-    })
 
-    return updatedBusiness
+      if (updatedBusiness) {
+        toast({
+          title: "Success",
+          description: `Business "${updatedBusiness.name}" has been updated.`,
+        })
+      }
+
+      return updatedBusiness
+    } catch (error) {
+      console.error("Failed to update business:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update business. Please try again.",
+        variant: "destructive",
+      })
+      return undefined
+    }
   }
 
   const deleteBusiness = (id: string) => {
-    const businessExists = businesses.some((business) => business.id === id)
+    try {
+      const business = getBusiness(id)
+      if (!business) return false
 
-    if (businessExists) {
-      setBusinesses((prev) => prev.filter((business) => business.id !== id))
+      setBusinesses((prev) => {
+        const updated = prev.filter((b) => b.id !== id)
+        saveBusinesses(updated)
+        return updated
+      })
+
+      toast({
+        title: "Success",
+        description: `Business "${business.name}" has been deleted.`,
+      })
+
       return true
+    } catch (error) {
+      console.error("Failed to delete business:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete business. Please try again.",
+        variant: "destructive",
+      })
+      return false
     }
-
-    return false
   }
 
   const incrementProjectCount = (businessId: string, active = true) => {
-    setBusinesses((prev) =>
-      prev.map((business) => {
+    setBusinesses((prev) => {
+      const updated = prev.map((business) => {
         if (business.id === businessId) {
           return {
             ...business,
@@ -133,13 +214,15 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           }
         }
         return business
-      }),
-    )
+      })
+      saveBusinesses(updated)
+      return updated
+    })
   }
 
   const decrementProjectCount = (businessId: string, active = true) => {
-    setBusinesses((prev) =>
-      prev.map((business) => {
+    setBusinesses((prev) => {
+      const updated = prev.map((business) => {
         if (business.id === businessId) {
           return {
             ...business,
@@ -149,8 +232,25 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           }
         }
         return business
-      }),
-    )
+      })
+      saveBusinesses(updated)
+      return updated
+    })
+  }
+
+  const refreshBusinesses = () => {
+    setIsLoading(true)
+    try {
+      const savedBusinesses = localStorage.getItem("macrum_businesses")
+      if (savedBusinesses) {
+        const parsedBusinesses = JSON.parse(savedBusinesses)
+        setBusinesses(parsedBusinesses)
+      }
+    } catch (error) {
+      console.error("Failed to refresh businesses:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -164,6 +264,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         deleteBusiness,
         incrementProjectCount,
         decrementProjectCount,
+        refreshBusinesses,
       }}
     >
       {children}

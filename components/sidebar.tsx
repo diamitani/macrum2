@@ -77,7 +77,10 @@ export function Sidebar() {
     <div className="flex h-full flex-col border-r bg-background">
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="font-bold text-xl">ModularCRM</span>
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">M</span>
+          </div>
+          <span className="font-bold text-xl">Macrum</span>
         </Link>
       </div>
       <div className="flex-1 overflow-auto py-2">

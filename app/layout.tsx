@@ -9,9 +9,10 @@ import { Providers } from "./providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ModularCRM",
-  description: "Manage your businesses and projects in one place",
-    generator: 'v0.dev'
+  title: "Macrum - Project Management for Multi-Business Portfolios",
+  description:
+    "Manage projects across multiple businesses, freelance clients, and ventures with Macrum's unified dashboard.",
+  generator: "Macrum CRM System",
 }
 
 export default function RootLayout({
