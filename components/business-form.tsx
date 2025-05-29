@@ -2,209 +2,274 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useBusinesses } from "@/context/business-context"
-import { validateBusiness } from "@/lib/validations"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
+import { useBusinesses } from "@/context/business-context"
+import { validateBusiness, type ValidationError } from "@/lib/validations"
 
 interface BusinessFormProps {
-  business?: {
-    id: string
-    name: string
-    description: string
-    industry?: string
-    website?: string
-    email?: string
-    phone?: string
-    address?: string
-  }
-  mode?: "create" | "edit"
+  businessId?: string
+  onCancel?: () => void
 }
 
-export function BusinessForm({ business, mode = "create" }: BusinessFormProps) {
+const INDUSTRIES = [
+  "Technology",
+  "Finance",
+  "Healthcare",
+  "Education",
+  "Retail",
+  "Manufacturing",
+  "Consulting",
+  "Marketing",
+  "Real Estate",
+  "Other",
+]
+
+export function BusinessForm({ businessId, onCancel }: BusinessFormProps) {
   const router = useRouter()
-  const { addBusiness, updateBusiness } = useBusinesses()
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const { getBusiness, addBusiness, updateBusiness } = useBusinesses()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<ValidationError[]>([])
 
   const [formData, setFormData] = useState({
-    name: business?.name || "",
-    description: business?.description || "",
-    industry: business?.industry || "",
-    website: business?.website || "",
-    email: business?.email || "",
-    phone: business?.phone || "",
-    address: business?.address || "",
+    name: "",
+    description: "",
+    industry: "",
+    website: "",
+    email: "",
+    phone: "",
+    address: "",
   })
+
+  // If editing, load the business data
+  useEffect(() => {
+    if (businessId) {
+      const business = getBusiness(businessId)
+      if (business) {
+        setFormData({
+          name: business.name,
+          description: business.description,
+          industry: business.industry || "",
+          website: business.website || "",
+          email: business.email || "",
+          phone: business.phone || "",
+          address: business.address || "",
+        })
+      }
+    }
+  }, [businessId, getBusiness])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+
+    // Clear error for this field
+    setErrors(errors.filter((error) => error.field !== name))
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+
+    // Clear error for this field
+    setErrors(errors.filter((error) => error.field !== name))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setErrors({})
+    setIsSubmitting(true)
+
+    // Validate form data
+    const validationErrors = validateBusiness(formData)
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors)
+      setIsSubmitting(false)
+      return
+    }
 
     try {
-      const validation = validateBusiness(formData)
-      if (!validation.success) {
-        const fieldErrors: Record<string, string> = {}
-        validation.error.errors.forEach((error) => {
-          if (error.path[0]) {
-            fieldErrors[error.path[0] as string] = error.message
-          }
-        })
-        setErrors(fieldErrors)
-        return
-      }
-
-      if (mode === "edit" && business) {
-        updateBusiness(business.id, formData)
+      if (businessId) {
+        // Update existing business
+        updateBusiness(businessId, formData)
         toast({
-          title: "Success",
-          description: "Business updated successfully",
+          title: "Business updated",
+          description: `${formData.name} has been updated successfully.`,
         })
-        router.push(`/businesses/${business.id}`)
+        router.push(`/businesses/${businessId}`)
       } else {
+        // Create new business
         const newBusiness = addBusiness(formData)
         toast({
-          title: "Success",
-          description: "Business created successfully",
+          title: "Business created",
+          description: `${formData.name} has been created successfully.`,
         })
         router.push(`/businesses/${newBusiness.id}`)
       }
     } catch (error) {
+      console.error("Error saving business:", error)
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: "Failed to save business. Please try again.",
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
-    }
+  const getErrorMessage = (field: string) => {
+    const error = errors.find((err) => err.field === field)
+    return error ? error.message : null
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card>
       <CardHeader>
-        <CardTitle>{mode === "edit" ? "Edit Business" : "Create New Business"}</CardTitle>
+        <CardTitle>{businessId ? "Edit Business" : "Create New Business"}</CardTitle>
         <CardDescription>
-          {mode === "edit" ? "Update your business information" : "Add a new business to your portfolio"}
+          {businessId ? "Update your business details" : "Add a new business to your ModularCRM"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="required">
-                Business Name
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Enter business name"
-                className={errors.name ? "border-red-500" : ""}
-              />
-              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="industry">Industry</Label>
-              <Input
-                id="industry"
-                value={formData.industry}
-                onChange={(e) => handleChange("industry", e.target.value)}
-                placeholder="e.g., Technology, Healthcare"
-              />
-            </div>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="required">
+              Business Name
+            </Label>
+            <Input
+              id="name"
+              name="name"
+              placeholder="Enter business name"
+              value={formData.name}
+              onChange={handleChange}
+              className={getErrorMessage("name") ? "border-destructive" : ""}
+            />
+            {getErrorMessage("name") && <p className="text-sm text-destructive">{getErrorMessage("name")}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="required">
-              Description
-            </Label>
+            <Label htmlFor="industry">Industry</Label>
+            <Select value={formData.industry} onValueChange={(value) => handleSelectChange("industry", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select industry" />
+              </SelectTrigger>
+              <SelectContent>
+                {INDUSTRIES.map((industry) => (
+                  <SelectItem key={industry} value={industry.toLowerCase()}>
+                    {industry}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
+              name="description"
+              placeholder="Enter business description"
               value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="Describe your business"
-              rows={3}
-              className={errors.description ? "border-red-500" : ""}
+              onChange={handleChange}
+              rows={4}
+              className={getErrorMessage("description") ? "border-destructive" : ""}
             />
-            {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
+            {getErrorMessage("description") && (
+              <p className="text-sm text-destructive">{getErrorMessage("description")}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                name="website"
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={handleChange}
+                className={getErrorMessage("website") ? "border-destructive" : ""}
+              />
+              {getErrorMessage("website") && <p className="text-sm text-destructive">{getErrorMessage("website")}</p>}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
+                placeholder="contact@example.com"
                 value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="business@example.com"
-                className={errors.email ? "border-red-500" : ""}
+                onChange={handleChange}
+                className={getErrorMessage("email") ? "border-destructive" : ""}
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {getErrorMessage("email") && <p className="text-sm text-destructive">{getErrorMessage("email")}</p>}
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
+                name="phone"
+                placeholder="(123) 456-7890"
                 value={formData.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                placeholder="+1 (555) 123-4567"
+                onChange={handleChange}
+                className={getErrorMessage("phone") ? "border-destructive" : ""}
+              />
+              {getErrorMessage("phone") && <p className="text-sm text-destructive">{getErrorMessage("phone")}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                name="address"
+                placeholder="123 Business St, City, State"
+                value={formData.address}
+                onChange={handleChange}
               />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website"
-              value={formData.website}
-              onChange={(e) => handleChange("website", e.target.value)}
-              placeholder="https://example.com"
-              className={errors.website ? "border-red-500" : ""}
-            />
-            {errors.website && <p className="text-sm text-red-500">{errors.website}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleChange("address", e.target.value)}
-              placeholder="Business address"
-              rows={2}
-            />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <Button type="submit" disabled={isLoading} className="flex-1">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "edit" ? "Update Business" : "Create Business"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </CardContent>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={onCancel || (() => router.push("/businesses"))}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {businessId ? "Updating..." : "Creating..."}
+              </>
+            ) : businessId ? (
+              "Update Business"
+            ) : (
+              "Create Business"
+            )}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   )
 }
