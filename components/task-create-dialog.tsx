@@ -1,8 +1,8 @@
+
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -20,32 +20,40 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { CalendarIcon, Loader2 } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { useTasks } from "@/context/task-context"
+import { useProjects } from "@/context/project-context"
 
 interface TaskCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   defaultDate?: Date
-  onCreateTask?: (task: any) => void
+  defaultProjectId?: string
 }
 
 export function TaskCreateDialog({
   open,
   onOpenChange,
   defaultDate = new Date(),
-  onCreateTask,
+  defaultProjectId,
 }: TaskCreateDialogProps) {
   const [date, setDate] = useState<Date | undefined>(defaultDate)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
+  const { addTask } = useTasks()
+  const { projects } = useProjects()
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    priority: "medium",
-    status: "not-started",
-    projectId: "",
+    priority: "medium" as "low" | "medium" | "high",
+    status: "todo" as "todo" | "in-progress" | "in-review" | "completed",
+    projectId: defaultProjectId || "",
   })
+
+  useEffect(() => {
+    if (defaultProjectId) {
+      setFormData(prev => ({ ...prev, projectId: defaultProjectId }))
+    }
+  }, [defaultProjectId])
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -57,41 +65,24 @@ export function TaskCreateDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.title) {
-      toast({
-        title: "Error",
-        description: "Task title is required",
-        variant: "destructive",
-      })
+    if (!formData.title.trim()) {
+      return
+    }
+
+    if (!formData.projectId) {
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      // In a real app, you would save the task to your database
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const newTask = {
-        id: Math.random().toString(36).substring(2, 9),
+      await addTask({
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
         status: formData.status,
-        dueDate: date ? date.toISOString() : new Date().toISOString(),
-        projectId: formData.projectId || undefined,
-        projectName: formData.projectId ? "Sample Project" : undefined, // In a real app, you would get this from your database
-        createdAt: new Date().toISOString(),
-      }
-
-      if (onCreateTask) {
-        onCreateTask(newTask)
-      }
-
-      toast({
-        title: "Task created",
-        description: "The task has been created successfully",
+        projectId: formData.projectId,
+        dueDate: date?.toISOString(),
       })
 
       // Reset form
@@ -99,22 +90,15 @@ export function TaskCreateDialog({
         title: "",
         description: "",
         priority: "medium",
-        status: "not-started",
-        projectId: "",
+        status: "todo",
+        projectId: defaultProjectId || "",
       })
       setDate(new Date())
+      onOpenChange(false)
     } catch (error) {
       console.error("Error creating task:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create task. Please try again.",
-        variant: "destructive",
-      })
     } finally {
       setIsSubmitting(false)
-      if (!onCreateTask) {
-        onOpenChange(false)
-      }
     }
   }
 
@@ -134,6 +118,7 @@ export function TaskCreateDialog({
                 placeholder="Enter task title"
                 value={formData.title}
                 onChange={(e) => handleChange("title", e.target.value)}
+                required
               />
             </div>
             <div className="grid gap-2">
@@ -182,8 +167,9 @@ export function TaskCreateDialog({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="not-started">Not Started</SelectItem>
+                    <SelectItem value="todo">Todo</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="in-review">In Review</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
@@ -195,17 +181,18 @@ export function TaskCreateDialog({
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="1">Sales Campaign</SelectItem>
-                    <SelectItem value="2">Website Redesign</SelectItem>
-                    <SelectItem value="3">Product Launch</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.projectId}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

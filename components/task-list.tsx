@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -5,41 +6,27 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import { TaskItem } from "@/components/task-item"
 import { TaskCreateDialog } from "@/components/task-create-dialog"
-import { useToast } from "@/components/ui/use-toast"
+import { useTasks } from "@/context/task-context"
+import { useProjects } from "@/context/project-context"
 
 interface TaskListProps {
   projectId: string
 }
 
 export function TaskList({ projectId }: TaskListProps) {
-  const [tasks, setTasks] = useState<any[]>([])
+  const { getTasksByProjectId, isLoading } = useTasks()
+  const { getProject } = useProjects()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const { toast } = useToast()
 
-  const handleDeleteTask = async (taskId: string) => {
-    // In a real app, you would call your API to delete the task
-    setTasks(tasks.filter((task) => task.id !== taskId))
+  const tasks = getTasksByProjectId(projectId)
+  const project = getProject(projectId)
 
-    toast({
-      title: "Task deleted",
-      description: "The task has been deleted successfully",
-    })
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Loading tasks...</div>
   }
 
-  const handleCreateTask = (newTask: any) => {
-    // Add the project ID to the task
-    const taskWithProject = {
-      ...newTask,
-      projectId,
-    }
-
-    setTasks([taskWithProject, ...tasks])
-    setIsCreateDialogOpen(false)
-
-    toast({
-      title: "Task created",
-      description: "The task has been created successfully",
-    })
+  if (!project) {
+    return <div className="flex justify-center p-8">Project not found</div>
   }
 
   if (tasks.length === 0) {
@@ -59,7 +46,7 @@ export function TaskList({ projectId }: TaskListProps) {
         <TaskCreateDialog
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
-          onCreateTask={handleCreateTask}
+          defaultProjectId={projectId}
         />
       </div>
     )
@@ -67,14 +54,22 @@ export function TaskList({ projectId }: TaskListProps) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Tasks</h2>
+        <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Task
+        </Button>
+      </div>
+
       {tasks.map((task) => (
-        <TaskItem key={task.id} task={task} onDelete={() => handleDeleteTask(task.id)} showProject={false} />
+        <TaskItem key={task.id} task={task} showProject={false} />
       ))}
 
       <TaskCreateDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onCreateTask={handleCreateTask}
+        defaultProjectId={projectId}
       />
     </div>
   )
