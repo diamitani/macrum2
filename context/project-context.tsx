@@ -13,6 +13,7 @@ export interface Project {
   name: string
   description: string
   businessId: string
+  clientId?: string
   status: "planning" | "in-progress" | "in-review" | "completed"
   priority: "low" | "medium" | "high"
   progress: number
@@ -296,3 +297,4 @@ export function useProjects() {
   }
   return context
 }
+`
