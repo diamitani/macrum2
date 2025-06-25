@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { toast } from "@/components/ui/use-toast"
-import { generateId } from "@/lib/utils" // Assuming generateId is in utils
+import { generateId } from "@/lib/utils"
 
 // Define the Client type
 export interface Client {
@@ -33,6 +33,9 @@ interface ClientContextType {
 // Create the context
 const ClientContext = createContext<ClientContextType | undefined>(undefined)
 
+// LocalStorage key
+const LOCAL_STORAGE_KEY = "macrum_clients"
+
 // Create the provider component
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>([])
@@ -42,7 +45,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadClients = () => {
       try {
-        const savedClients = localStorage.getItem("macrum_clients")
+        const savedClients = localStorage.getItem(LOCAL_STORAGE_KEY)
         if (savedClients) {
           const parsedClients = JSON.parse(savedClients)
           const validClients = parsedClients.filter(
@@ -52,7 +55,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("Failed to load clients from localStorage:", error)
-        localStorage.removeItem("macrum_clients")
+        localStorage.removeItem(LOCAL_STORAGE_KEY)
         toast({
           title: "Data Recovery",
           description: "Client data was corrupted and has been reset.",
@@ -70,7 +73,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading && clients.length >= 0) {
       try {
-        localStorage.setItem("macrum_clients", JSON.stringify(clients))
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clients))
       } catch (error) {
         console.error("Failed to save clients to localStorage:", error)
         toast({
@@ -184,105 +187,20 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const getClientsByProject = useCallback((projectId: string) => {
     return clients.filter(client => client.projectIds?.includes(projectId))
   }, [clients])
-interface ClientContextType {
-  clients: Client[]
-  addClient: (clientData: Omit<Client, "id" | "createdAt" | "updatedAt">) => Client
-  updateClient: (id: string, updates: Partial<Omit<Client, "id" | "createdAt">>) => void
-  deleteClient: (id: string) => void
-  getClientById: (id: string) => Client | undefined
-  isLoading: boolean
-}
-
-// Create the context
-const ClientContext = createContext<ClientContextType | undefined>(undefined)
-
-// LocalStorage key
-const LOCAL_STORAGE_KEY = "macrum_clients"
-
-// Create the provider component
-export function ClientProvider({ children }: { children: React.ReactNode }) {
-  const [clients, setClients] = useState<Client[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    try {
-      const storedClients = localStorage.getItem(LOCAL_STORAGE_KEY)
-      if (storedClients) {
-        setClients(JSON.parse(storedClients))
-      }
-    } catch (error) {
-      console.error("Failed to load clients from localStorage:", error)
-      toast({
-        title: "Error",
-        description: "Could not load client data. Storage might be corrupted.",
-        variant: "destructive",
-      })
-      // Optionally clear corrupted storage
-      // localStorage.removeItem(LOCAL_STORAGE_KEY);
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isLoading) {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clients))
-      } catch (error) {
-        console.error("Failed to save clients to localStorage:", error)
-        toast({
-          title: "Error",
-          description: "Could not save client data.",
-          variant: "destructive",
-        })
-      }
-    }
-  }, [clients, isLoading])
-
-  const addClient = useCallback((clientData: Omit<Client, "id" | "createdAt" | "updatedAt">): Client => {
-    const newClient: Client = {
-      ...clientData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    setClients((prevClients) => [...prevClients, newClient])
-    toast({ title: "Success", description: `Client "${newClient.name}" added.` })
-    return newClient
-  }, [])
-
-  const updateClient = useCallback(
-    (id: string, updates: Partial<Omit<Client, "id" | "createdAt">>) => {
-      setClients((prevClients) =>
-        prevClients.map((client) =>
-          client.id === id ? { ...client, ...updates, updatedAt: new Date().toISOString() } : client,
-        ),
-      )
-      const updatedClient = clients.find((c) => c.id === id)
-      toast({ title: "Success", description: `Client "${updatedClient?.name || id}" updated.` })
-    },
-    [clients],
-  )
-
-  const deleteClient = useCallback(
-    (id: string) => {
-      const clientToDelete = clients.find((c) => c.id === id)
-      setClients((prevClients) => prevClients.filter((client) => client.id !== id))
-      // TODO: Consider implications for projects/tasks linked to this client
-      toast({ title: "Success", description: `Client "${clientToDelete?.name || id}" deleted.` })
-    },
-    [clients],
-  )
-
-  const getClientById = useCallback(
-    (id: string) => {
-      return clients.find((client) => client.id === id)
-    },
-    [clients],
-  )
 
   return (
-    <ClientContext.Provider value={{ clients, addClient, updateClient, deleteClient, getClientById, isLoading }}>
+    <ClientContext.Provider
+      value={{
+        clients,
+        addClient,
+        updateClient,
+        deleteClient,
+        getClientById,
+        getClientsByBusiness,
+        getClientsByProject,
+        isLoading,
+      }}
+    >
       {children}
     </ClientContext.Provider>
   )
