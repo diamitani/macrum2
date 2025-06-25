@@ -16,6 +16,7 @@ import {
   GitBranch,
   CheckSquare,
   Home,
+  BookOpen
 } from "lucide-react"
 
 const navigation = [
@@ -23,7 +24,11 @@ const navigation = [
   { name: "Businesses", href: "/businesses", icon: Building2 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
-  { name: "Dependencies", href: "/dashboard/dependencies", icon: GitBranch },
+  {
+          title: "Notebook",
+          url: "/notebook",
+          icon: BookOpen,
+        },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Files", href: "/files", icon: FileText },
