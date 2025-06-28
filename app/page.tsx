@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,12 +17,20 @@ export default function DashboardPage() {
   const { businesses, isLoading: businessesLoading } = useBusinesses()
   const { projects, isLoading: projectsLoading } = useProjects()
   const [mounted, setMounted] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
+    const authStatus = localStorage.getItem("macrum_auth")
+    if (authStatus !== "true") {
+      router.push("/marketing")
+      return
+    }
+    setIsAuthenticated(true)
     setMounted(true)
   }, [])
 
-  if (!mounted || businessesLoading || projectsLoading) {
+  if (!mounted || !isAuthenticated || businessesLoading || projectsLoading) {
     return <DashboardSkeleton />
   }
 

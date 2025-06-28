@@ -1,11 +1,12 @@
-
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   Building2,
   FolderOpen,
@@ -15,7 +16,8 @@ import {
   Settings,
   CheckSquare,
   Home,
-  BookOpen
+  BookOpen,
+  LogOut,
 } from "lucide-react"
 
 interface NavigationItem {
@@ -38,6 +40,14 @@ const navigation: NavigationItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleSignOut = () => {
+    // Implement your sign-out logic here, e.g., clear cookies,
+    // redirect to sign-in page, etc.
+    console.log("Signing out...");
+    router.push("/login"); // Example: Redirect to the login page
+  };
 
   return (
     <div className="flex h-full w-64 flex-col bg-gray-50 dark:bg-gray-900">
@@ -70,6 +80,26 @@ export function Sidebar() {
           })}
         </nav>
       </ScrollArea>
+      <div className="mt-auto p-4 border-t space-y-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/placeholder-user.jpg" alt="User" />
+              <AvatarFallback>JD</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">John Doe</p>
+              <p className="text-xs text-muted-foreground truncate">john@example.com</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={handleSignOut}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
     </div>
   )
 }
