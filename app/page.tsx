@@ -21,14 +21,14 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const authStatus = localStorage.getItem("macrum_auth")
-    if (authStatus !== "true") {
-      router.push("/marketing")
-      return
-    }
-    setIsAuthenticated(true)
     setMounted(true)
-  }, [])
+    const authStatus = localStorage.getItem("macrum_auth")
+    if (authStatus === "true") {
+      setIsAuthenticated(true)
+    } else {
+      router.push("/marketing")
+    }
+  }, [router])
 
   if (!mounted || !isAuthenticated || businessesLoading || projectsLoading) {
     return <DashboardSkeleton />

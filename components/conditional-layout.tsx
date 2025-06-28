@@ -15,7 +15,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     const authStatus = localStorage.getItem("macrum_auth")
     setIsAuthenticated(authStatus === "true")
     setIsLoading(false)
-  }, [])
+  }, [pathname])
 
   // Show loading state during hydration
   if (isLoading) {
