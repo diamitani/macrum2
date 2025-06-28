@@ -2,11 +2,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
-import { PlusCircle, Search, BookOpen, Edit, Trash2, Calendar } from "lucide-react"
+import { PlusCircle, Search, BookOpen, Edit, Trash2, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface Note {
   id: string
@@ -31,6 +30,7 @@ interface Note {
 
 export default function NotebookPage() {
   const [notes, setNotes] = useState<Note[]>([])
+  const [currentPage, setCurrentPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -146,35 +146,37 @@ export default function NotebookPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric",
     })
   }
 
+  const currentNote = filteredNotes[currentPage]
+  const totalPages = filteredNotes.length
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notebook</h1>
-          <p className="text-muted-foreground">Capture your thoughts and ideas</p>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-orange-50 to-yellow-50 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <BookOpen className="h-8 w-8 text-amber-700" />
+          <h1 className="text-3xl font-bold text-amber-900 font-serif">My Notepad</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-amber-600" />
             <Input
               type="search"
               placeholder="Search notes..."
-              className="pl-8"
+              className="pl-10 w-64 bg-white/80 border-amber-200 focus:border-amber-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-amber-600 hover:bg-amber-700 text-white">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 New Note
               </Button>
@@ -183,7 +185,7 @@ export default function NotebookPage() {
               <DialogHeader>
                 <DialogTitle>Create New Note</DialogTitle>
                 <DialogDescription>
-                  Add a new note to your notebook
+                  Add a new note to your notepad
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -227,82 +229,171 @@ export default function NotebookPage() {
         </div>
       </div>
 
-      {filteredNotes.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredNotes.map((note) => (
-            <Card key={note.id} className="flex flex-col">
-              <CardHeader className="flex-shrink-0">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{note.title}</CardTitle>
-                    <CardDescription className="flex items-center mt-1">
-                      <Calendar className="mr-1 h-3 w-3" />
-                      {formatDate(note.updatedAt)}
-                    </CardDescription>
+      {/* Notepad */}
+      <div className="flex-1 flex items-center justify-center">
+        {totalPages > 0 ? (
+          <div className="relative">
+            {/* Notepad Background */}
+            <Card className="w-[800px] h-[600px] bg-gradient-to-b from-white to-gray-50 shadow-2xl border-l-4 border-l-red-400 relative overflow-hidden">
+              {/* Spiral binding holes */}
+              <div className="absolute left-8 top-0 bottom-0 w-px bg-red-300"></div>
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute left-6 w-3 h-3 bg-gray-200 rounded-full border border-gray-300"
+                  style={{ top: `${30 + i * 28}px` }}
+                ></div>
+              ))}
+
+              {/* Horizontal lines */}
+              <div className="absolute inset-0 pt-20 pl-16 pr-8">
+                {Array.from({ length: 18 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-full h-px bg-blue-200 opacity-40"
+                    style={{ marginBottom: '27px' }}
+                  ></div>
+                ))}
+              </div>
+
+              <CardContent className="relative h-full p-0">
+                {/* Note content */}
+                <div className="absolute inset-0 pt-16 pl-20 pr-12 pb-16 overflow-hidden">
+                  <div className="flex items-start justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-gray-800 font-handwriting leading-tight max-w-md">
+                      {currentNote.title}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(currentNote)}
+                        className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteNote(currentNote.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-100"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(note)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteNote(note.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                  <div className="text-sm text-gray-600 mb-6 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {formatDate(currentNote.updatedAt)}
                   </div>
+
+                  <div className="prose prose-lg max-w-none">
+                    <p className="text-gray-700 font-handwriting leading-relaxed whitespace-pre-wrap text-lg">
+                      {currentNote.content || "This page is empty..."}
+                    </p>
+                  </div>
+
+                  {currentNote.tags.length > 0 && (
+                    <div className="absolute bottom-8 left-0 right-0">
+                      <div className="flex flex-wrap gap-2">
+                        {currentNote.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-amber-200 text-amber-800 rounded-full text-xs font-medium"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground line-clamp-4">
-                    {note.content || "No content"}
-                  </p>
+
+                {/* Page number */}
+                <div className="absolute bottom-4 right-8 text-sm text-gray-500 font-medium">
+                  Page {currentPage + 1} of {totalPages}
                 </div>
-                {note.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {note.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="flex items-center justify-center p-8 border rounded-lg">
-          <div className="text-center">
-            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">
-              {searchQuery ? "No notes match your search" : "No notes yet"}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {searchQuery
-                ? "Try adjusting your search terms or clear the search"
-                : "Create your first note to start capturing your thoughts"}
-            </p>
-            {!searchQuery && (
-              <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Your First Note
-              </Button>
-            )}
-            {searchQuery && (
-              <Button className="mt-4" variant="outline" onClick={() => setSearchQuery("")}>
-                Clear Search
-              </Button>
-            )}
+
+            {/* Navigation buttons */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 border-amber-300 hover:bg-amber-50"
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 border-amber-300 hover:bg-amber-50"
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center">
+            <div className="w-[800px] h-[600px] bg-gradient-to-b from-white to-gray-50 shadow-2xl border-l-4 border-l-red-400 relative overflow-hidden flex items-center justify-center">
+              {/* Spiral binding holes */}
+              <div className="absolute left-8 top-0 bottom-0 w-px bg-red-300"></div>
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute left-6 w-3 h-3 bg-gray-200 rounded-full border border-gray-300"
+                  style={{ top: `${30 + i * 28}px` }}
+                ></div>
+              ))}
+
+              {/* Horizontal lines */}
+              <div className="absolute inset-0 pt-20 pl-16 pr-8">
+                {Array.from({ length: 18 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-full h-px bg-blue-200 opacity-40"
+                    style={{ marginBottom: '27px' }}
+                  ></div>
+                ))}
+              </div>
+
+              <div className="text-center z-10">
+                <BookOpen className="mx-auto h-16 w-16 text-amber-600 mb-4" />
+                <h3 className="text-2xl font-bold text-gray-700 mb-2 font-handwriting">
+                  {searchQuery ? "No notes match your search" : "Your notepad is empty"}
+                </h3>
+                <p className="text-gray-600 mb-6 font-handwriting text-lg">
+                  {searchQuery
+                    ? "Try adjusting your search terms"
+                    : "Start writing your first note"}
+                </p>
+                {!searchQuery && (
+                  <Button 
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={() => setIsCreateDialogOpen(true)}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Write Your First Note
+                  </Button>
+                )}
+                {searchQuery && (
+                  <Button 
+                    variant="outline" 
+                    className="border-amber-300 hover:bg-amber-50"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
