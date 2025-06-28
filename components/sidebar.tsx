@@ -24,15 +24,10 @@ const navigation = [
   { name: "Businesses", href: "/businesses", icon: Building2 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
-  {
-          title: "Notebook",
-          url: "/notebook",
-          icon: BookOpen,
-        },
+  { name: "Notebook", href: "/notebook", icon: BookOpen },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Files", href: "/files", icon: FileText },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
