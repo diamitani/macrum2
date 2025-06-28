@@ -1,212 +1,122 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { toast } from "@/components/ui/use-toast"
-import { generateId } from "@/lib/utils"
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { Client } from "@/types"
 
-// Define the Client type
-export interface Client {
-  id: string
-  name: string
-  email?: string
-  phone?: string
-  address?: string
-  businessId?: string // To link client to a business
-  projectIds?: string[] // To link client to projects
-  createdAt: string
-  updatedAt: string
-}
-
-// Define the context type
 interface ClientContextType {
   clients: Client[]
-  addClient: (client: Omit<Client, "id" | "createdAt" | "updatedAt">) => Client
-  updateClient: (id: string, client: Partial<Client>) => Client | undefined
-  deleteClient: (id: string) => boolean
-  getClientById: (id: string) => Client | undefined
-  getClientsByBusiness: (businessId: string) => Client[]
-  getClientsByProject: (projectId: string) => Client[]
   isLoading: boolean
+  error: string | null
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => void
+  updateClient: (id: string, updates: Partial<Client>) => void
+  deleteClient: (id: string) => void
+  getClientById: (id: string) => Client | undefined
 }
 
-// Create the context
 const ClientContext = createContext<ClientContextType | undefined>(undefined)
 
-// LocalStorage key
 const LOCAL_STORAGE_KEY = "macrum_clients"
 
-// Create the provider component
-export function ClientProvider({ children }: { children: React.ReactNode }) {
+export function ClientProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Load clients from localStorage on mount
   useEffect(() => {
-    const loadClients = () => {
-      try {
-        const savedClients = localStorage.getItem(LOCAL_STORAGE_KEY)
-        if (savedClients) {
-          const parsedClients = JSON.parse(savedClients)
-          const validClients = parsedClients.filter(
-            (client: any) => client && typeof client === "object" && client.id && client.name,
-          )
-          setClients(validClients)
-        }
-      } catch (error) {
-        console.error("Failed to load clients from localStorage:", error)
-        localStorage.removeItem(LOCAL_STORAGE_KEY)
-        toast({
-          title: "Data Recovery",
-          description: "Client data was corrupted and has been reset.",
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+      if (stored) {
+        const parsedClients = JSON.parse(stored).map((client: any) => ({
+          ...client,
+          createdAt: new Date(client.createdAt),
+          updatedAt: new Date(client.updatedAt),
+        }))
+        setClients(parsedClients)
       }
+    } catch (err) {
+      setError("Failed to load clients from storage")
+      console.error("Error loading clients:", err)
+    } finally {
+      setIsLoading(false)
     }
-
-    loadClients()
   }, [])
 
-  // Save clients to localStorage whenever they change
+  // Save to localStorage whenever clients change
   useEffect(() => {
-    if (!isLoading && clients.length >= 0) {
+    if (!isLoading) {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clients))
-      } catch (error) {
-        console.error("Failed to save clients to localStorage:", error)
-        toast({
-          title: "Save Error",
-          description: "Failed to save client data. Please try again.",
-          variant: "destructive",
-        })
+      } catch (err) {
+        setError("Failed to save clients to storage")
+        console.error("Error saving clients:", err)
       }
     }
   }, [clients, isLoading])
 
-  const addClient = useCallback((clientData: Omit<Client, "id" | "createdAt" | "updatedAt">) => {
+  const addClient = (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const now = new Date().toISOString()
       const newClient: Client = {
-        id: generateId(),
         ...clientData,
-        createdAt: now,
-        updatedAt: now,
+        id: crypto.randomUUID(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
-
       setClients(prev => [...prev, newClient])
-
-      toast({
-        title: "Success",
-        description: `Client "${newClient.name}" has been created successfully.`,
-      })
-
-      return newClient
-    } catch (error) {
-      console.error("Failed to add client:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create client. Please try again.",
-        variant: "destructive",
-      })
-      throw error
+      setError(null)
+    } catch (err) {
+      setError("Failed to add client")
+      console.error("Error adding client:", err)
     }
-  }, [])
+  }
 
-  const updateClient = useCallback((id: string, clientData: Partial<Client>) => {
+  const updateClient = (id: string, updates: Partial<Client>) => {
     try {
-      let updatedClient: Client | undefined
-
-      setClients(prev => {
-        const updated = prev.map(client => {
-          if (client.id === id) {
-            updatedClient = {
-              ...client,
-              ...clientData,
-              updatedAt: new Date().toISOString(),
-            }
-            return updatedClient
-          }
-          return client
-        })
-        return updated
-      })
-
-      if (updatedClient) {
-        toast({
-          title: "Success",
-          description: `Client "${updatedClient.name}" has been updated.`,
-        })
-      }
-
-      return updatedClient
-    } catch (error) {
-      console.error("Failed to update client:", error)
-      toast({
-        title: "Error",
-        description: "Failed to update client. Please try again.",
-        variant: "destructive",
-      })
-      return undefined
+      setClients(prev =>
+        prev.map(client =>
+          client.id === id
+            ? { ...client, ...updates, updatedAt: new Date() }
+            : client
+        )
+      )
+      setError(null)
+    } catch (err) {
+      setError("Failed to update client")
+      console.error("Error updating client:", err)
     }
-  }, [])
+  }
 
-  const deleteClient = useCallback((id: string) => {
+  const deleteClient = (id: string) => {
     try {
-      const client = clients.find(c => c.id === id)
-      if (!client) return false
-
-      setClients(prev => prev.filter(c => c.id !== id))
-
-      toast({
-        title: "Success",
-        description: `Client "${client.name}" has been deleted.`,
-      })
-
-      return true
-    } catch (error) {
-      console.error("Failed to delete client:", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete client. Please try again.",
-        variant: "destructive",
-      })
-      return false
+      setClients(prev => prev.filter(client => client.id !== id))
+      setError(null)
+    } catch (err) {
+      setError("Failed to delete client")
+      console.error("Error deleting client:", err)
     }
-  }, [clients])
+  }
 
-  const getClientById = useCallback((id: string) => {
+  const getClientById = (id: string) => {
     return clients.find(client => client.id === id)
-  }, [clients])
+  }
 
-  const getClientsByBusiness = useCallback((businessId: string) => {
-    return clients.filter(client => client.businessId === businessId)
-  }, [clients])
-
-  const getClientsByProject = useCallback((projectId: string) => {
-    return clients.filter(client => client.projectIds?.includes(projectId))
-  }, [clients])
+  const value: ClientContextType = {
+    clients,
+    isLoading,
+    error,
+    addClient,
+    updateClient,
+    deleteClient,
+    getClientById,
+  }
 
   return (
-    <ClientContext.Provider
-      value={{
-        clients,
-        addClient,
-        updateClient,
-        deleteClient,
-        getClientById,
-        getClientsByBusiness,
-        getClientsByProject,
-        isLoading,
-      }}
-    >
+    <ClientContext.Provider value={value}>
       {children}
     </ClientContext.Provider>
   )
 }
 
-// Create a custom hook to use the context
 export function useClientContext() {
   const context = useContext(ClientContext)
   if (context === undefined) {

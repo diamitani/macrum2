@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -12,14 +13,18 @@ import {
   Calendar,
   FileText,
   Settings,
-  BarChart3,
-  GitBranch,
   CheckSquare,
   Home,
   BookOpen
 } from "lucide-react"
 
-const navigation = [
+interface NavigationItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Businesses", href: "/businesses", icon: Building2 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
@@ -38,7 +43,9 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col bg-gray-50 dark:bg-gray-900">
       <div className="flex h-16 items-center px-6">
         <div className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">M</div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">
+            M
+          </div>
           <span className="text-xl font-bold">Macrum</span>
         </div>
       </div>
@@ -50,7 +57,10 @@ export function Sidebar() {
               <Link key={item.name} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start", isActive && "bg-gray-100 dark:bg-gray-800")}
+                  className={cn(
+                    "w-full justify-start",
+                    isActive && "bg-gray-100 dark:bg-gray-800"
+                  )}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}
