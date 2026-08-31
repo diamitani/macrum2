@@ -27,7 +27,6 @@ interface Project {
   id: string
   name: string
   businessId: string
-  businessName: string
   status: string
   progress: number
   dueDate: string

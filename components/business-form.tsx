@@ -47,6 +47,7 @@ export function BusinessForm({ businessId, onCancel }: BusinessFormProps) {
     email: "",
     phone: "",
     address: "",
+    status: "planning" as "active" | "inactive" | "planning",
   })
 
   // If editing, load the business data
@@ -62,6 +63,7 @@ export function BusinessForm({ businessId, onCancel }: BusinessFormProps) {
           email: business.email || "",
           phone: business.phone || "",
           address: business.address || "",
+          status: business.status,
         })
       }
     }

@@ -100,23 +100,25 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTasks((prevTasks) =>
       prevTasks.map((task) => {
         if (task.id === taskId) {
-          updatedTask = {
+          const updated: Task = {
             ...task,
             ...updates,
             dependsOn: updates.dependsOn?.filter((depId) => depId !== undefined && depId !== null) || task.dependsOn, // Ensure valid IDs
             updatedAt: new Date().toISOString(),
           }
-          return updatedTask
+          updatedTask = updated
+          return updated
         }
         return task
       }),
     )
     if (updatedTask) {
-      toast({ title: "Success", description: `Task "${updatedTask.title}" updated.` })
+      toast({ title: "Success", description: `Task "${(updatedTask as Task).title}" updated.` })
+      return updatedTask
     } else {
       toast({ title: "Error", description: "Task not found for update.", variant: "destructive" })
+      return null
     }
-    return updatedTask
   }, [])
 
   const deleteTask = useCallback(

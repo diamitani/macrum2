@@ -7,7 +7,7 @@ interface ClientContextType {
   clients: Client[]
   isLoading: boolean
   error: string | null
-  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Client
   updateClient: (id: string, updates: Partial<Client>) => void
   deleteClient: (id: string) => void
   getClientById: (id: string) => Client | undefined
@@ -64,9 +64,11 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       }
       setClients(prev => [...prev, newClient])
       setError(null)
+      return newClient
     } catch (err) {
       setError("Failed to add client")
       console.error("Error adding client:", err)
+      throw err
     }
   }
 

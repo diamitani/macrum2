@@ -22,10 +22,13 @@ export default function ProjectsPage() {
 
   // Filter projects based on search and filters
   const filteredProjects = projects.filter((project) => {
+    const business = businesses.find((b) => b.id === project.businessId)
+    const businessName = business?.name || ""
+
     const matchesSearch =
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.businessName.toLowerCase().includes(searchQuery.toLowerCase())
+      businessName.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesBusiness = selectedBusiness === "all" || project.businessId === selectedBusiness
     const matchesStatus = selectedStatus === "all" || project.status === selectedStatus

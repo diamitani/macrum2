@@ -97,7 +97,7 @@ export function ProjectList({ businessId, clientId }: ProjectListProps) {
                             : project.status === "planning"
                               ? "outline"
                               : project.status === "completed"
-                                ? "success"
+                                ? "secondary"
                                 : "default"
                       }
                     >

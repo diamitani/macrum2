@@ -37,24 +37,20 @@ export default function ClientsPage() {
 
   const handleDeleteClient = () => {
     if (clientToDelete) {
-      const success = deleteClient(clientToDelete)
-
-      if (success) {
-        toast({
-          title: "Client deleted",
-          description: "The client has been deleted successfully",
-        })
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to delete client. Please try again.",
-          variant: "destructive",
-        })
-      }
-
-      setIsDeleteDialogOpen(false)
-      setClientToDelete(null)
+      deleteClient(clientToDelete)
+      toast({
+        title: "Client deleted",
+        description: "The client has been deleted successfully",
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: "No client selected for deletion.",
+        variant: "destructive",
+      })
     }
+    setIsDeleteDialogOpen(false)
+    setClientToDelete(null)
   }
 
   // Get business name for a client

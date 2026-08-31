@@ -82,7 +82,7 @@ export default function ProjectPage() {
                   : project.status === "planning"
                     ? "outline"
                     : project.status === "completed"
-                      ? "success"
+                      ? "secondary"
                       : "default"
             }
           >

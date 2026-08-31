@@ -7,6 +7,7 @@ export interface Client {
   company?: string
   address?: string
   notes?: string
+  businessId?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -14,42 +15,50 @@ export interface Client {
 export interface Business {
   id: string
   name: string
-  description?: string
-  industry?: string
+  description: string
+  industry: string
   website?: string
   phone?: string
   email?: string
   address?: string
-  createdAt: Date
-  updatedAt: Date
+  status: "active" | "inactive" | "planning"
+  createdAt: Date | string
+  updatedAt: Date | string
+  projectCount: number
+  activeProjects: number
 }
 
 export interface Project {
   id: string
   name: string
-  description?: string
-  status: 'active' | 'completed' | 'on-hold' | 'cancelled'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  startDate?: Date
-  endDate?: Date
-  businessId?: string
+  description: string
+  businessId: string
   clientId?: string
-  budget?: number
-  createdAt: Date
-  updatedAt: Date
+  status: "planning" | "in-progress" | "in-review" | "completed"
+  priority: "low" | "medium" | "high"
+  progress: number
+  startDate: Date | string
+  dueDate: Date | string
+  createdAt: Date | string
+  updatedAt: Date | string
+  taskCount: number
+  completedTasks: number
 }
 
 export interface Task {
   id: string
   title: string
   description?: string
-  status: 'todo' | 'in-progress' | 'review' | 'completed'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  assigneeId?: string
-  projectId?: string
-  dueDate?: Date
-  createdAt: Date
-  updatedAt: Date
+  status: "todo" | "in-progress" | "in-review" | "completed"
+  priority: "low" | "medium" | "high"
+  dueDate?: string | Date
+  createdAt: string | Date
+  updatedAt: string | Date
+  projectId: string
+  businessId?: string
+  assignedTo?: string[]
+  tags?: string[]
+  dependsOn?: string[]
 }
 
 export interface CalendarEvent {
