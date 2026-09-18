@@ -137,6 +137,7 @@ export function AssetManager({ businessId, projectId }: AssetManagerProps) {
           <CardTitle>Files</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -209,6 +210,7 @@ export function AssetManager({ businessId, projectId }: AssetManagerProps) {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

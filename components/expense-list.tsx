@@ -146,6 +146,7 @@ export function ExpenseList({ businessId, projectId }: ExpenseListProps) {
           <CardTitle>Expense History</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -214,6 +215,7 @@ export function ExpenseList({ businessId, projectId }: ExpenseListProps) {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   Building2,
   FolderOpen,
@@ -20,6 +19,8 @@ import {
   Home,
   BookOpen,
   LogOut,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react"
 
 interface NavigationItem {
@@ -42,7 +43,16 @@ const navigation: NavigationItem[] = [
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  /** Desktop icon-only mode. Ignored styling is full-width. */
+  collapsed?: boolean
+  /** Called when the collapse toggle is pressed (desktop). */
+  onToggleCollapse?: () => void
+  /** Called when a nav link is pressed (used to close the mobile drawer). */
+  onNavigate?: () => void
+}
+
+export function Sidebar({ collapsed = false, onToggleCollapse, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -54,59 +64,98 @@ export function Sidebar() {
       // storage unavailable — still redirect
     }
     router.push("/auth/signin")
-  };
+  }
 
   return (
-    <div className="flex h-full w-64 flex-col bg-gray-50 dark:bg-gray-900">
-      <div className="flex h-16 items-center px-6">
+    <div
+      className={cn(
+        "flex h-full flex-col bg-gray-50 transition-[width] duration-200 dark:bg-gray-900",
+        collapsed ? "w-16" : "w-64",
+      )}
+    >
+      <div className={cn("flex h-16 items-center", collapsed ? "justify-center px-2" : "px-4")}>
         <div className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 font-bold text-white">
             M
           </div>
-          <span className="text-xl font-bold">Macrum</span>
+          {!collapsed && <span className="text-xl font-bold">Macrum</span>}
         </div>
+        {!collapsed && onToggleCollapse && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-auto h-8 w-8"
+            onClick={onToggleCollapse}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+        )}
       </div>
+      {collapsed && onToggleCollapse && (
+        <div className="flex justify-center pb-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onToggleCollapse}
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       <ScrollArea className="flex-1 px-3">
         <nav className="space-y-1 py-4">
           {navigation.map((item) => {
             const isActive = pathname === item.href
             return (
-              <Link key={item.name} href={item.href}>
+              <Link key={item.name} href={item.href} onClick={onNavigate} title={collapsed ? item.name : undefined}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start",
-                    isActive && "bg-gray-100 dark:bg-gray-800"
+                    "w-full",
+                    collapsed ? "justify-center px-0" : "justify-start",
+                    isActive && "bg-gray-100 dark:bg-gray-800",
                   )}
                 >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
+                  <item.icon className={cn("h-4 w-4", !collapsed && "mr-2")} />
+                  {!collapsed && item.name}
                 </Button>
               </Link>
             )
           })}
         </nav>
       </ScrollArea>
-      <div className="mt-auto p-4 border-t space-y-3">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="/placeholder-user.jpg" alt="User" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">john@example.com</p>
+      <div className={cn("mt-auto space-y-3 border-t", collapsed ? "p-2" : "p-4")}>
+        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src="/placeholder-user.jpg" alt="User" />
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">John Doe</p>
+              <p className="truncate text-xs text-muted-foreground">john@example.com</p>
             </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleSignOut}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          )}
         </div>
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full text-red-600 hover:bg-red-50 hover:text-red-700",
+            collapsed ? "justify-center px-0" : "justify-start",
+          )}
+          onClick={handleSignOut}
+          title={collapsed ? "Sign Out" : undefined}
+          aria-label="Sign Out"
+        >
+          <LogOut className={cn("h-4 w-4", !collapsed && "mr-2")} />
+          {!collapsed && "Sign Out"}
+        </Button>
+      </div>
     </div>
   )
 }

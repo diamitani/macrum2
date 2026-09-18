@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
-import { Sidebar } from "@/components/sidebar"
+import { AppShell } from "@/components/app-shell"
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -35,10 +35,5 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Show dashboard layout with sidebar
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
-    </div>
-  )
+  return <AppShell>{children}</AppShell>
 }
