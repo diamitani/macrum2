@@ -1,8 +1,10 @@
 # AGENTS.md — Macrum 2 repo-local operating notes
 
 ## Stack
-Next.js 15.2.4 + React 19 + Tailwind 3.4 + shadcn/ui. All data is
+Next.js 15.5.25 + React 19 + Tailwind 3.4 + shadcn/ui. All data is
 client-side localStorage via React contexts (no database yet).
+(Bumped 15.2.4 → 15.5.25 on 2026-09-18: Vercel blocks builds of the older
+version with `VULNERABLE_NEXTJS_VERSION`.)
 
 ## Install
 - `pnpm-lock.yaml` is the source of truth.
