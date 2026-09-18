@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ArrowLeft, PlusCircle, Users, Trash, Pencil, Loader2 } from "lucide-react"
 import { useBusinesses } from "@/context/business-context"
+import { TwentySyncButton } from "@/components/twenty-sync-button"
+import { TwentyBadge } from "@/components/twenty-badge"
 import { toast } from "@/components/ui/use-toast"
 import { formatDistanceToNow } from "date-fns"
 
@@ -30,7 +32,7 @@ export default function BusinessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = params.id as string
-  const { getBusiness, deleteBusiness, isLoading } = useBusinesses()
+  const { getBusiness, updateBusiness, deleteBusiness, isLoading } = useBusinesses()
   const [isDeleting, setIsDeleting] = useState(false)
   const [activeTab, setActiveTab] = useState("projects")
 
@@ -103,8 +105,14 @@ export default function BusinessPage() {
               {business.industry}
             </span>
           )}
+          <TwentyBadge twentyId={business.twentyId} />
         </div>
         <div className="flex items-center gap-2">
+          <TwentySyncButton
+            type="company"
+            record={business}
+            onSynced={(twentyId) => updateBusiness(id, { twentyId })}
+          />
           <Link href={`/businesses/${id}/edit`}>
             <Button variant="outline" size="sm">
               <Pencil className="mr-2 h-4 w-4" />

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -8,71 +9,30 @@ import { CalendarView } from "@/components/calendar-view"
 import { CalendarFilters } from "@/components/calendar-filters"
 import { TaskCreateDialog } from "@/components/task-create-dialog"
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-
-// Sample events data - in a real app, this would come from a database
-const events = [
-  {
-    id: "1",
-    title: "Client Meeting: Acme Corp",
-    date: "2023-05-15",
-    time: "10:00 AM - 11:30 AM",
-    type: "meeting",
-    priority: "high",
-  },
-  {
-    id: "2",
-    title: "Project Kickoff: Website Redesign",
-    date: "2023-05-15",
-    time: "2:00 PM - 3:00 PM",
-    type: "meeting",
-    priority: "high",
-  },
-  {
-    id: "3",
-    title: "Complete Sales Proposal",
-    date: "2023-05-16",
-    time: "9:00 AM - 12:00 PM",
-    type: "task",
-    priority: "high",
-  },
-  {
-    id: "4",
-    title: "Weekly Team Standup",
-    date: "2023-05-17",
-    time: "9:30 AM - 10:00 AM",
-    type: "meeting",
-    priority: "medium",
-  },
-  {
-    id: "5",
-    title: "Review Marketing Materials",
-    date: "2023-05-17",
-    time: "1:00 PM - 3:00 PM",
-    type: "task",
-    priority: "medium",
-  },
-  {
-    id: "6",
-    title: "Client Call: Globex Industries",
-    date: "2023-05-18",
-    time: "11:00 AM - 12:00 PM",
-    type: "meeting",
-    priority: "high",
-  },
-  {
-    id: "7",
-    title: "Prepare Monthly Report",
-    date: "2023-05-19",
-    time: "2:00 PM - 5:00 PM",
-    type: "task",
-    priority: "high",
-  },
-]
+import { useTasks } from "@/context/task-context"
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<"day" | "week" | "month">("week")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const { tasks } = useTasks()
+  const router = useRouter()
+
+  // Events come from tasks with due dates — the only dated records the app stores.
+  const events = useMemo(
+    () =>
+      tasks
+        .filter((t) => t.dueDate)
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          date: new Date(t.dueDate as string).toISOString().split("T")[0],
+          time: "All day",
+          type: "task",
+          priority: t.priority ?? "medium",
+        })),
+    [tasks]
+  )
 
   const handlePrevious = () => {
     const newDate = new Date(currentDate)
@@ -107,7 +67,7 @@ export default function CalendarPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground">Schedule and manage your tasks and meetings</p>
+          <p className="text-muted-foreground">Tasks with due dates, on your calendar</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -159,9 +119,8 @@ export default function CalendarPage() {
                 view={view}
                 currentDate={currentDate}
                 events={events}
-                onEventClick={(event) => console.log("Event clicked:", event)}
-                onTimeSlotClick={(date, time) => {
-                  console.log("Time slot clicked:", date, time)
+                onEventClick={() => router.push("/tasks")}
+                onTimeSlotClick={() => {
                   setIsCreateDialogOpen(true)
                 }}
               />

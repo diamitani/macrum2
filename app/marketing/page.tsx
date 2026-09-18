@@ -32,8 +32,7 @@ export default function MarketingPage() {
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-gray-600 hover:text-gray-900">Features</Link>
-            <Link href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
-            <Link href="#about" className="text-gray-600 hover:text-gray-900">About</Link>
+            <Link href="/marketing/contact" className="text-gray-600 hover:text-gray-900">Contact</Link>
           </nav>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>
@@ -70,9 +69,10 @@ export default function MarketingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-4" asChild>
-              <Link href="#demo">
-                Watch Demo
+            <Button size="lg" asChild>
+              <Link href="/auth/signup">
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
           </div>
@@ -247,25 +247,20 @@ export default function MarketingPage() {
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><Link href="#features" className="hover:text-white">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white">Pricing</Link></li>
-                <li><Link href="/marketing/security" className="hover:text-white">Security</Link></li>
+                <li><Link href="/marketing/contact" className="hover:text-white">Contact</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/marketing/about" className="hover:text-white">About</Link></li>
                 <li><Link href="/marketing/contact" className="hover:text-white">Contact</Link></li>
-                <li><Link href="/marketing/privacy" className="hover:text-white">Privacy</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/marketing/help" className="hover:text-white">Help Center</Link></li>
-                <li><Link href="/marketing/docs" className="hover:text-white">Documentation</Link></li>
                 <li><Link href="/marketing/contact" className="hover:text-white">Contact Support</Link></li>
               </ul>
             </div>

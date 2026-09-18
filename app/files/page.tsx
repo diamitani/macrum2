@@ -1,8 +1,12 @@
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { PlusCircle, Search, FileText } from "lucide-react"
+import { FileText, HardDrive } from "lucide-react"
 
+/**
+ * Files page — placeholder. File uploads are not wired yet: they need a
+ * storage backend decision (Supabase / open-source object storage) before
+ * the Upload buttons can do anything real. Until then this page is honest
+ * about that instead of showing dead upload buttons.
+ */
 export default function FilesPage() {
   return (
     <div className="space-y-6">
@@ -10,16 +14,6 @@ export default function FilesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Files</h1>
           <p className="text-muted-foreground">Manage all your files across different businesses and projects</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search files..." className="w-full pl-8 md:w-[300px]" />
-          </div>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Upload Files
-          </Button>
         </div>
       </div>
 
@@ -30,14 +24,18 @@ export default function FilesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center p-8">
-            <div className="text-center">
+            <div className="max-w-sm text-center">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-medium">No files yet</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Upload files to share with your team and clients</p>
-              <Button className="mt-4">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Upload Your First File
-              </Button>
+              <h3 className="mt-4 text-lg font-medium">File uploads coming soon</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Uploads need a storage backend first (Supabase or open-source object storage).
+                Once that's decided, this page will store, search, and share files across your
+                businesses and projects.
+              </p>
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <HardDrive className="h-3.5 w-3.5" />
+                No files are stored in the browser — uploads stay disabled until storage is wired.
+              </p>
             </div>
           </div>
         </CardContent>

@@ -22,6 +22,8 @@ export interface Business {
   updatedAt: string
   projectCount: number
   activeProjects: number
+  /** Twenty CRM record id after syncing (set via the Twenty sync button). */
+  twentyId?: string
 }
 
 interface BusinessContextType {

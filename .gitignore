@@ -18,6 +18,7 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -25,3 +26,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# pnpm 9 auto-writes a pnpm-10-syntax pnpm-workspace.yaml that breaks installs;
+# it is regenerated locally as needed — never commit it.
+/pnpm-workspace.yaml

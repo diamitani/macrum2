@@ -4,26 +4,34 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Search, Filter } from "lucide-react"
+import { PlusCircle, Search, Filter, List, Columns3 } from "lucide-react"
 import { TaskItem } from "@/components/task-item"
+import { TaskBoard } from "@/components/task-board"
 import { TaskCreateDialog } from "@/components/task-create-dialog"
 import { useTasks } from "@/context/task-context"
+import { useProjects } from "@/context/project-context"
+
+type ViewMode = "list" | "board"
 
 export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
+  const [projectFilter, setProjectFilter] = useState("all")
+  const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const { tasks, isLoading } = useTasks()
+  const { projects } = useProjects()
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || task.status === statusFilter
     const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter
+    const matchesProject = projectFilter === "all" || task.projectId === projectFilter
 
-    return matchesSearch && matchesStatus && matchesPriority
+    return matchesSearch && matchesStatus && matchesPriority && matchesProject
   })
 
   if (isLoading) {
@@ -46,6 +54,26 @@ export default function TasksPage() {
           <p className="text-muted-foreground">Manage all your tasks across different projects</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-md border p-1" role="tablist" aria-label="View mode">
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
+            >
+              <List className="mr-1 h-4 w-4" />
+              List
+            </Button>
+            <Button
+              variant={viewMode === "board" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("board")}
+              aria-pressed={viewMode === "board"}
+            >
+              <Columns3 className="mr-1 h-4 w-4" />
+              Board
+            </Button>
+          </div>
           <Button onClick={() => setIsCreateDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Task
@@ -87,6 +115,19 @@ export default function TasksPage() {
               <SelectItem value="low">Low</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
           </Button>
@@ -120,6 +161,8 @@ export default function TasksPage() {
               )}
             </div>
           </div>
+        ) : viewMode === "board" ? (
+          <TaskBoard tasks={filteredTasks} />
         ) : (
           <div className="space-y-4">
             {filteredTasks.map((task) => (

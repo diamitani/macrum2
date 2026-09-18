@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { User, MoreHorizontal, Pencil, Trash, ExternalLink, Mail, Phone, MapPin } from "lucide-react"
+import { TwentySyncButton } from "@/components/twenty-sync-button"
+import { TwentyBadge } from "@/components/twenty-badge"
 
 interface ClientCardProps {
   id: string
@@ -22,6 +24,8 @@ interface ClientCardProps {
   phone?: string
   address?: string
   businessName?: string
+  twentyId?: string
+  onSynced?: (id: string, twentyId: string) => void
   onDelete?: (id: string) => void
 }
 
@@ -32,6 +36,8 @@ export function ClientCard({
   phone,
   address,
   businessName,
+  twentyId,
+  onSynced,
   onDelete,
 }: ClientCardProps) {
   return (
@@ -40,11 +46,14 @@ export function ClientCard({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <CardTitle className="text-xl">{name}</CardTitle>
-            {businessName && (
-              <Badge variant="secondary" className="text-xs">
-                {businessName}
-              </Badge>
-            )}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {businessName && (
+                <Badge variant="secondary" className="text-xs">
+                  {businessName}
+                </Badge>
+              )}
+              <TwentyBadge twentyId={twentyId} />
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-muted-foreground" />
@@ -107,9 +116,16 @@ export function ClientCard({
         )}
       </CardContent>
       <CardFooter className="bg-muted/50 p-3">
-        <Link href={`/clients/${id}`} className="text-sm text-muted-foreground hover:text-foreground w-full">
-          View details
-        </Link>
+        <div className="flex w-full items-center justify-between gap-2">
+          <Link href={`/clients/${id}`} className="text-sm text-muted-foreground hover:text-foreground">
+            View details
+          </Link>
+          <TwentySyncButton
+            type="person"
+            record={{ id, name, email, phone, twentyId }}
+            onSynced={(newTwentyId) => onSynced?.(id, newTwentyId)}
+          />
+        </div>
       </CardFooter>
     </Card>
   )

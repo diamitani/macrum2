@@ -7,9 +7,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Building2, ArrowLeft, Mail, Phone, MessageSquare } from "lucide-react"
+import { Building2, ArrowLeft, Mail, Phone, MessageSquare, Send } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 export default function ContactPage() {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const data = new FormData(e.currentTarget)
+    const message = String(data.get("message") ?? "").trim()
+    if (!message) {
+      toast({
+        title: "Add a message first",
+        description: "Tell us how we can help before sending.",
+        variant: "destructive",
+      })
+      return
+    }
+    // Email sending is not wired yet — acknowledge the message locally.
+    e.currentTarget.reset()
+    toast({
+      title: "Message received",
+      description: "Thanks — this demo form doesn't send email yet. Reach us at support@macrum.com.",
+    })
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -46,32 +66,33 @@ export default function ContactPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" />
+                    <Input id="firstName" name="firstName" placeholder="John" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" />
+                    <Input id="lastName" name="lastName" placeholder="Doe" />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="john@example.com" />
+                  <Input id="email" name="email" type="email" placeholder="john@example.com" />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="company">Company (Optional)</Label>
-                  <Input id="company" placeholder="Your Company" />
+                  <Input id="company" name="company" placeholder="Your Company" />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="message">Message</Label>
                   <Textarea 
                     id="message" 
+                    name="message" 
                     placeholder="Tell us how we can help you..."
                     rows={5}
                   />

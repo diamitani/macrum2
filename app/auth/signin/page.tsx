@@ -139,9 +139,6 @@ export default function SignInPage() {
             </form>
 
             <div className="text-center space-y-2">
-              <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline">
-                Forgot your password?
-              </Link>
               <p className="text-sm text-gray-600">
                 Don't have an account?{" "}
                 <Link href="/auth/signup" className="text-blue-600 hover:underline">
@@ -153,10 +150,7 @@ export default function SignInPage() {
         </Card>
 
         <p className="text-xs text-gray-500 text-center mt-4">
-          By signing in, you agree to our{" "}
-          <Link href="/marketing/terms" className="underline">Terms of Service</Link>
-          {" "}and{" "}
-          <Link href="/marketing/privacy" className="underline">Privacy Policy</Link>
+          Demo sign-in — no real account is created or stored server-side.
         </p>
       </div>
     </div>

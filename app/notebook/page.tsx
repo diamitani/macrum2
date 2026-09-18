@@ -18,6 +18,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import { PlusCircle, Search, BookOpen, Edit, Trash2, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+import { SummarizeButton } from "@/components/ai/summarize-button"
 
 interface Note {
   id: string
@@ -230,9 +231,10 @@ export default function NotebookPage() {
       </div>
 
       {/* Notepad */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center overflow-y-auto">
         {totalPages > 0 ? (
-          <div className="relative">
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="relative">
             {/* Notepad Background */}
             <Card className="w-[800px] h-[600px] bg-gradient-to-b from-white to-gray-50 shadow-2xl border-l-4 border-l-red-400 relative overflow-hidden">
               {/* Spiral binding holes */}
@@ -336,6 +338,13 @@ export default function NotebookPage() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+            </div>
+            <SummarizeButton
+              key={currentNote.id}
+              noteTitle={currentNote.title}
+              noteContent={currentNote.content}
+              className="w-[800px] max-w-full"
+            />
           </div>
         ) : (
           <div className="text-center">

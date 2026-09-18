@@ -15,6 +15,8 @@ import {
   FileText,
   Settings,
   CheckSquare,
+  Handshake,
+  Network,
   Home,
   BookOpen,
   LogOut,
@@ -31,6 +33,8 @@ const navigation: NavigationItem[] = [
   { name: "Businesses", href: "/businesses", icon: Building2 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
+  { name: "Deals", href: "/deals", icon: Handshake },
+  { name: "Twenty", href: "/twenty", icon: Network },
   { name: "Notebook", href: "/notebook", icon: BookOpen },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
@@ -43,10 +47,13 @@ export function Sidebar() {
   const router = useRouter()
 
   const handleSignOut = () => {
-    // Implement your sign-out logic here, e.g., clear cookies,
-    // redirect to sign-in page, etc.
-    console.log("Signing out...");
-    router.push("/login"); // Example: Redirect to the login page
+    try {
+      localStorage.removeItem("macrum_auth")
+      localStorage.removeItem("macrum_user")
+    } catch {
+      // storage unavailable — still redirect
+    }
+    router.push("/auth/signin")
   };
 
   return (

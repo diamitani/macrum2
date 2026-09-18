@@ -6,6 +6,7 @@ import { BusinessProvider } from "@/context/business-context"
 import { ProjectProvider } from "@/context/project-context"
 import { ClientProvider } from "@/context/client-context" // Correctly imported
 import { TaskProvider } from "@/context/task-context"
+import { DealProvider } from "@/context/deal-context"
 import { Toaster } from "@/components/ui/toaster"
 // import { AuthProvider } from '@/components/auth/auth-provider';
 // import { SetupWizardWrapper } from '@/components/setup-wizard/setup-wizard-wrapper';
@@ -20,9 +21,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             {" "}
             {/* Correctly used */}
             <TaskProvider>
-              {/* <SetupWizardWrapper> */}
-              {children}
-              {/* </SetupWizardWrapper> */}
+              <DealProvider>
+                {/* <SetupWizardWrapper> */}
+                {children}
+                {/* </SetupWizardWrapper> */}
+              </DealProvider>
             </TaskProvider>
           </ClientProvider>
         </ProjectProvider>

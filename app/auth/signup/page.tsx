@@ -156,14 +156,7 @@ export default function SignUpPage() {
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, agreeToTerms: checked as boolean }))}
                 />
                 <Label htmlFor="terms" className="text-sm">
-                  I agree to the{" "}
-                  <Link href="/marketing/terms" className="text-blue-600 hover:underline">
-                    Terms of Service
-                  </Link>
-                  {" "}and{" "}
-                  <Link href="/marketing/privacy" className="text-blue-600 hover:underline">
-                    Privacy Policy
-                  </Link>
+                  I agree to the demo terms (no real account is created)
                 </Label>
               </div>
 

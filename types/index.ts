@@ -8,6 +8,8 @@ export interface Client {
   address?: string
   notes?: string
   businessId?: string
+  /** Twenty CRM record id after syncing (set via the Twenty sync button). */
+  twentyId?: string
   createdAt: Date
   updatedAt: Date
 }

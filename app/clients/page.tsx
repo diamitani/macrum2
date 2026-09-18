@@ -21,7 +21,7 @@ import { useBusinesses } from "@/context/business-context"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ClientsPage() {
-  const { clients, isLoading, deleteClient } = useClientContext()
+  const { clients, isLoading, deleteClient, updateClient } = useClientContext()
   const { businesses } = useBusinesses()
   const [searchQuery, setSearchQuery] = useState("")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -118,6 +118,8 @@ export default function ClientsPage() {
               phone={client.phone}
               address={client.address}
               businessName={getBusinessName(client.businessId)}
+              twentyId={client.twentyId}
+              onSynced={(cardId, newTwentyId) => updateClient(cardId, { twentyId: newTwentyId })}
               onDelete={(id) => {
                 setClientToDelete(id)
                 setIsDeleteDialogOpen(true)

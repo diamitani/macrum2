@@ -11,11 +11,14 @@ import { Building2, FolderKanban, CheckSquare, Plus, TrendingUp, Calendar, Alert
 import Link from "next/link"
 import { useBusinesses } from "@/context/business-context"
 import { useProjects } from "@/context/project-context"
+import { useTasks } from "@/context/task-context"
+import { DailyBriefing } from "@/components/ai/daily-briefing"
 import { formatDistanceToNow } from "date-fns"
 
 export default function DashboardPage() {
   const { businesses, isLoading: businessesLoading } = useBusinesses()
   const { projects, isLoading: projectsLoading } = useProjects()
+  const { tasks, isLoading: tasksLoading } = useTasks()
   const [mounted, setMounted] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
@@ -30,7 +33,7 @@ export default function DashboardPage() {
     }
   }, [router])
 
-  if (!mounted || !isAuthenticated || businessesLoading || projectsLoading) {
+  if (!mounted || !isAuthenticated || businessesLoading || projectsLoading || tasksLoading) {
     return <DashboardSkeleton />
   }
 
@@ -40,6 +43,37 @@ export default function DashboardPage() {
   const activeProjects = projects.filter((p) => p.status === "in-progress").length
   const completedProjects = projects.filter((p) => p.status === "completed").length
   const overallProgress = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0
+
+  // Daily briefing inputs: overdue + due-today tasks, and pipeline movement
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const openTasks = tasks.filter((t) => t.status !== "completed")
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  const overdueTasks = openTasks
+    .filter((t) => t.dueDate && new Date(t.dueDate) < today)
+    .map((t) => ({
+      title: t.title,
+      dueDate: t.dueDate,
+      projectName: projects.find((p) => p.id === t.projectId)?.name,
+    }))
+  const dueTodayTasks = openTasks
+    .filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), today))
+    .map((t) => ({
+      title: t.title,
+      dueDate: t.dueDate,
+      projectName: projects.find((p) => p.id === t.projectId)?.name,
+    }))
+  const pipeline = {
+    totalProjects,
+    planning: projects.filter((p) => p.status === "planning").length,
+    inProgress: activeProjects,
+    inReview: projects.filter((p) => p.status === "in-review").length,
+    completed: completedProjects,
+    overdueCount: overdueTasks.length,
+  }
 
   // Get recent projects (last 5)
   const recentProjects = projects
@@ -100,6 +134,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
+      <DailyBriefing
+        input={{ overdue: overdueTasks, dueToday: dueTodayTasks, pipeline }}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>

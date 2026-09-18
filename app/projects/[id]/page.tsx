@@ -12,9 +12,11 @@ import { TaskList } from "@/components/task-list"
 import { ExpenseList } from "@/components/expense-list"
 import { AssetManager } from "@/components/asset-manager"
 import { DeleteProjectButton } from "@/components/delete-project-button"
-import { ArrowLeft, CalendarClock, Users, MessageSquare, Pencil } from "lucide-react"
+import { ArrowLeft, CalendarClock, Users, MessageSquare, Pencil, Sparkles } from "lucide-react"
 import { useProjects } from "@/context/project-context"
 import { useBusinesses } from "@/context/business-context"
+import { useTasks } from "@/context/task-context"
+import { TaskBreakdownDialog } from "@/components/ai/task-breakdown-dialog"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -25,6 +27,8 @@ export default function ProjectPage() {
   const { getBusiness } = useBusinesses()
   const [isLoading, setIsLoading] = useState(true)
   const [project, setProject] = useState<any>(null)
+  const [breakdownOpen, setBreakdownOpen] = useState(false)
+  const { tasks } = useTasks()
 
   // Effect to handle project loading with retry logic
   useEffect(() => {
@@ -178,9 +182,25 @@ export default function ProjectPage() {
         <TabsContent value="tasks" className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Tasks</h2>
-            <Button>Add Task</Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setBreakdownOpen(true)}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Break down into tasks
+              </Button>
+              <Button>Add Task</Button>
+            </div>
           </div>
           <TaskList projectId={project.id} />
+          <TaskBreakdownDialog
+            open={breakdownOpen}
+            onOpenChange={setBreakdownOpen}
+            brief={`${project.name}. ${project.description || ""}`.trim()}
+            projectId={project.id}
+            projectContext={`Status: ${project.status}; Priority: ${project.priority}; Due: ${project.dueDate}. Existing tasks: ${tasks
+              .filter((t) => t.projectId === project.id)
+              .map((t) => t.title)
+              .join("; ") || "none"}`}
+          />
         </TabsContent>
         <TabsContent value="expenses" className="mt-6">
           <ExpenseList projectId={project.id} />
